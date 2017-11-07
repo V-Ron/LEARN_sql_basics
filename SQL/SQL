@@ -1,0 +1,149 @@
+WHERE
+
+-- What is the population of the US? (HINT: starts with 2, ends with 000)
+select population from country WHERE name = 'United States';
+
+-- What is the area of the US? (starts with 9, ends with million square miles)
+select surfacearea from country WHERE name = 'United States';
+
+-- List the countries in Africa that have a population smaller than 30,000,000 and a life expectancy of more than 45? (all 37 of them)
+select * FROM country WHERE continent = 'Africa' and population < 30000000 and lifeexpectancy > 45;
+
+
+-- Which countries are something like a republic? (are there 122 or 143 countries or ?)
+select * FROM country WHERE governmentform LIKE 'R%';
+
+-- Which countries are some kind of republic and acheived independence after 1945?
+
+select * FROM country WHERE governmentform = 'Republic' and indepyear >  1945;
+
+--
+-- Which countries acheived independence after 1945 and are not some kind of republic?
+select * FROM country WHERE indepyear >  1945 and governmentform != 'Republic';
+
+
+-- ORDER BY
+--
+-- Which fifteen countries have the lowest life expectancy? highest life expectancy?
+select * FROM country WHERE lifeexpectancy > 0 ORDER BY lifeexpectancy desc LIMIT 15;
+
+-- Which five countries have the lowest population density? highest population density?
+select * FROM country WHERE population > 0 ORDER BY population desc LIMIT 5;
+
+-- Which is the smallest country, by area and population? the 10 smallest countries, by area and population?
+select * FROM country WHERE population > 0 and surfacearea > 0 ORDER BY population, surfacearea asc LIMIT 1;
+
+select * FROM country WHERE population > 0 and surfacearea > 0 ORDER BY population, surfacearea asc LIMIT 10;
+
+-- Which is the biggest country, by area and population? the 10 biggest countries, by area and population?
+
+select * FROM country WHERE population > 0 and surfacearea > 0 ORDER BY population desc, surfacearea desc LIMIT 1;
+
+select * FROM country WHERE population > 0 and surfacearea > 0 ORDER BY population desc, surfacearea desc LIMIT 10;
+
+-- WITH
+--
+-- Of the smallest 10 countries, which has the biggest gnp? (hint: use WITH and LIMIT)
+with smallest_10 as
+	(select * from country order by population asc limit 10)
+select * from smallest_10 order by gnp desc
+
+-- Of the smallest 10 countries, which has the biggest per capita gnp?
+with smallest_10 as
+	(select * from country WHERE population > 0 and gnp > 0 ORDER BY population asc limit 10)
+select gnp, population, code, (gnp/population) as gnppercapita from smallest_10 ORDER BY gnppercapita asc;
+
+
+-- Of the biggest 10 countries, which has the biggest gnp?
+with biggest_10 as
+	(select * from country order by population desc limit 10)
+select * from biggest_10 order by gnp asc
+
+-- Of the biggest 10 countries, which has the biggest per capita gnp?
+
+with biggest_10 as
+	(select * from country WHERE population > 0 and gnp > 0 ORDER BY population desc limit 10)
+select gnp, population, code, (gnp/population) as gnppercapita from biggest_10 ORDER BY gnppercapita asc;
+
+-- What is the sum of surface area of the 10 biggest countries in the world? The 10 smallest?
+with biggest_10 as
+	(select * from country order by population desc limit 10)
+SELECT sum(surfacearea) from biggest_10
+
+-- GROUP BY
+--
+-- How big are the continents in term of area and population?
+SELECT continent, SUM(population), SUM(surfacearea) FROM country GROUP BY continent;
+
+-- Which region has the highest average gnp?
+SELECT region, AVG(gnp) FROM country GROUP BY region ORDER BY AVG(gnp) desc LIMIT 1;
+
+-- Who is the most influential head of state measured by population?
+SELECT headofstate, SUM(population) FROM country GROUP BY headofstate ORDER BY SUM(population) desc
+
+-- Who is the most influential head of state measured by surface area?
+SELECT headofstate, SUM(surfacearea) FROM country WHERE NOT (headofstate = '' )GROUP BY headofstate ORDER BY SUM(surfacearea) desc
+
+
+
+-- What are the most common forms of government? (hint: use count(*))
+SELECT governmentform, count(governmentform) AS total_government
+FROM country
+GROUP BY governmentform ORDER BY total_government desc
+
+-- What are the forms of government for the top ten countries by surface area?
+WITH top_ten AS
+(SELECT * FROM country ORDER BY surfacearea desc limit 10)
+SELECT code, governmentform from top_ten
+
+
+-- What are the forms of government for the top ten richest nations? (technically most productive)
+WITH top_ten AS
+(SELECT * FROM country ORDER BY gnp desc limit 10)
+SELECT code, governmentform FROM top_ten;
+
+-- What are the forms of government for the top ten richest per capita nations? (technically most productive)
+-- Interesting...
+WITH top_ten AS
+(SELECT code, governmentform, (gnp/population) FROM country WHERE gnp !=0 ORDER BY (gnp/population) desc limit 10)
+SELECT code, governmentform FROM top_ten;
+
+-- Which countries are in the top 5% in terms of area?
+-- (hint: use a SELECT in a LIMIT clause)
+SELECT code from country order by surfacearea asc limit (select (count(code)*.05) from country)
+--
+-- When is the database from?
+around 2000.
+-- Stretch Challenges
+--
+-- What is the 3rd most common language spoken?
+SELECT language, count(language) AS num_lang FROM countrylanguage
+GROUP BY language ORDER BY num_lang desc LIMIT 3
+
+-- How many cities are in Chile?
+SELECT count(countrycode) FROM city WHERE countrycode = 'CHL'
+
+-- What is the total population in China?
+SELECT code, country, population FROM country WHERE code = 'CHN'
+
+-- How many countries are in North America? (the continent)
+SELECT count(continent) FROM country WHERE continent = 'North America'
+
+
+-- Which countries gained their independence before 1963?
+SELECT * FROM country WHERE indepyear < 1963
+
+-- What is the total population of all continents?
+SELECT SUM(population) FROM country
+
+-- What is the average life expectancy for all continents?
+SELECT avg(lifeexpectancy) FROM country WHERE lifeexpectancy > 0
+
+
+-- Which countries have the letter z in the name? How many?
+SELECT * FROM country WHERE name LIKE 'Z%'
+
+-- What is the age of Jamaica?
+
+
+-- Are there any countries without an official language? Hint: WHERE ... NOT IN ( SELECT ... FROM ... WHERE ...)
